@@ -6,20 +6,26 @@
   display: none;
 }
 
-.city path {
+.stock path {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
 
-.city.hidden path {
+.stock.hidden path {
   fill: none;
   stroke: #ccc !important;
   stroke-width: 1.5px;
 }
 
-.city.hidden text {
+.stock.hidden text {
   fill: #ccc !important;
+}
+
+.brush .selection {
+  stroke: #000;
+  fill-opastock: .125;
+  shape-rendering: crispEdges;
 }
 
 
@@ -66,17 +72,17 @@ var line = d3.line()
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.price); });
 
-var brush = d3.brush()
-      .on("start", brushstart)
-      .on("brush", brushmove)
-      .on("end", brushend);
-
-svg.call(brush);
+// var brush = d3.brush()
+//       .on("start", brushstart)
+//       .on("brush", brushmove)
+//       .on("end", brushend);
+//
+// svg.call(brush);
 
 d3.csv("stock_data.csv", type, function(error, data) {
   if (error) throw error;
 
-  var cities = data.columns.slice(1).map(function(id) {
+  var stocks = data.columns.slice(1).map(function(id) {
     return {
       id: id,
       values: data.map(function(d) {
@@ -88,11 +94,11 @@ d3.csv("stock_data.csv", type, function(error, data) {
   x.domain(d3.extent(data, function(d) { return d.date; }));
 
   y.domain([
-    d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.price; }); }),
-    d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.price; }); })
+    d3.min(stocks, function(c) { return d3.min(c.values, function(d) { return d.price; }); }),
+    d3.max(stocks, function(c) { return d3.max(c.values, function(d) { return d.price; }); })
   ]);
 
-  z.domain(cities.map(function(c) { return c.id; }));
+  z.domain(stocks.map(function(c) { return c.id; }));
 
   g.append("g")
       .attr("class", "axis axis--x")
@@ -115,19 +121,19 @@ d3.csv("stock_data.csv", type, function(error, data) {
       .attr("fill", "#000")
       .text("Stock Price, $");
 
-  var city = g.selectAll(".city")
-    .data(cities)
+  var stock = g.selectAll(".stock")
+    .data(stocks)
     .enter().append("g")
-      .attr("class", "city");
+      .attr("class", "stock");
 
-  city.append("path")
+  stock.append("path")
       .attr("class", "line")
       .attr("d", function(d) { return line(d.values); })
       .style("stroke", function(d) { return z(d.id); });
       // .on('mouseover', hovering)
       // .on('mouseout', not_hovering);
 
-  city.append("text")
+  stock.append("text")
       .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
       .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.price) + ")"; })
       .attr("x", 3)
@@ -135,6 +141,9 @@ d3.csv("stock_data.csv", type, function(error, data) {
       .style("font", "10px sans-serif")
       .attr("fill", "#000")
       .text(function(d) { return d.id; });
+
+  // stock.on('mouseover', hovering)
+  //     .on('mouseout', not_hovering);
 });
 
 function type(d, _, columns) {
@@ -143,55 +152,39 @@ function type(d, _, columns) {
   return d;
 }
 
-// function hovering(d) {
-//   console.log("HOVERING");
-//   d3.select(this).classed("hovering", true);
-// }
-//
-// function not_hovering(d) {
-//   console.log("NOT HOVERING");
-//   d3.select(this).classed("hovering", false);
-// }
-//
-// // var drag = d3.drag()
-// //   .on("start", function(d,i) {
-// //   })
-// //   .on("drag", function(d,i) {
-// //
-// //   })
-//
-// var startX, startY;
-// var isDrawing = false;
-//
-// function onDrag(d) {
-//
-// }
+//brushes container
+var gBrushes = svg.append('g')
+	.attr("class", "brushes");
 
-var brushCell;
+//keep track of existing brushes
+var brushes = [];
 
-  // Clear the previously-active brush, if any.
-  function brushstart(p) {
-    // if (brushCell !== this) {
-      // d3.select(brushCell).call(brush.clear());
-      // x.domain(domainByTrait[p.x]);
-      // y.domain(domainByTrait[p.y]);
-    //   console.log(p);
-    //   brushCell = this;
+var newBrush = function (){
+  var brush = d3.brush()
+      .on("start", brushstart)
+      .on("brush", brushmove)
+      .on("end", brushend);
+
+  function brushstart() {
+    // console.log("BRUSH STARTED");
+    // if (d3.event.sourceEvent)
+    //     brush.mouseStart = d3.event.sourceEvent.x;
+    //
+    // if(brush.extent.start == undefined){
+    // 	d3.event.sourceEvent.x;
     // }
-  }
+  };
 
-  // Highlight the selected circles.
   function brushmove(p) {
-    var e = d3.brushSelection(this);//brush.extent();
+    var e = d3.brushSelection(this);
     // console.log(e);
     var x0 = x.invert(e[0][0] - margin.left);
     var x1 = x.invert(e[1][0] - margin.left);
     var y0 = y.invert(e[0][1] - margin.top);
     var y1 = y.invert(e[1][1] - margin.top);
-    // console.log("(" + x0 + ", " + y0 + ")");
-    svg.selectAll(".city").classed("hidden", function(d) {
-      // return true;
-      // console.log(d);
+
+    //NEED TO FILTER FOR "CURRENTLY NOT HIDDEN" BEFORE CLASSED
+    svg.selectAll(".stock").classed("hidden", function(d) {
       for (var i = 0; i < d.values.length; i++) {
         var date = d.values[i].date;
         var price = d.values[i].price;
@@ -201,13 +194,39 @@ var brushCell;
         return false;
       }
       return true;
-      // return e[0][0] > d[p.x] || d[p.x] > e[1][0]
-      //     || e[0][1] > d[p.y] || d[p.y] > e[1][1];
     });
+
+    // d3.select(this).call(brush.extent(e));
   }
 
+  brushes.push({id: brushes.length, brush: brush});
+}
+
+function update() {
+	var gBrush = gBrushes
+		.selectAll('.brush')
+		.data(brushes, function (d){return d.id})
+    .enter()
+		.append("g", '.brush')
+		.attr('class', 'brush')
+		.each(function(brushWrapper) {
+			brushWrapper.brush(d3.select(this));
+		});
+
+
+	gBrush.exit()
+		.remove();
+}
+
+var brushCell;
+
   function brushend() {
-    // if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
+    if (d3.brushSelection(this) === null) svg.selectAll(".hidden").classed("hidden", false);
+    newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
+    update();
   }
+
+  newBrush();
+  update();
 
 </script>
