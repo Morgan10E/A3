@@ -6,19 +6,19 @@
   display: none;
 }
 
-.city path {
+.company path {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
 
-.city.hidden path {
+.company.hidden path {
   fill: none;
   stroke: #ccc !important;
   stroke-width: 1.5px;
 }
 
-.city.hidden text {
+.company.hidden text {
   fill: #ccc !important;
 }
 
@@ -66,10 +66,19 @@ var line = d3.line()
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.price); });
 
+var brushes = [];
+
 var brush = d3.brush()
       .on("start", brushstart)
       .on("brush", brushmove)
-      .on("end", brushend);
+      .on("end", brushend); //Keep track of what brushes is surrounding
+
+      brushes.push({id: brushes.length, brush: brush});
+
+
+
+//new brush handler
+
 
 svg.call(brush);
 
@@ -171,15 +180,14 @@ function type(d, _, columns) {
 var brushCell;
 
   // Clear the previously-active brush, if any.
-  function brushstart(p) {
-    // if (brushCell !== this) {
-      // d3.select(brushCell).call(brush.clear());
-      // x.domain(domainByTrait[p.x]);
-      // y.domain(domainByTrait[p.y]);
-    //   console.log(p);
-    //   brushCell = this;
-    // }
-  }
+  function brushstart() {
+      if (d3.event.sourceEvent)
+          brush.mouseStart = d3.event.sourceEvent.x;
+
+      if(brush.extent.start == undefined){
+        d3.event.sourceEvent.x;
+      }
+    };
 
   // Highlight the selected circles.
   function brushmove(p) {
@@ -190,7 +198,7 @@ var brushCell;
     var y0 = y.invert(e[0][1] - margin.top);
     var y1 = y.invert(e[1][1] - margin.top);
     // console.log("(" + x0 + ", " + y0 + ")");
-    svg.selectAll(".city").classed("hidden", function(d) {
+    svg.selectAll(".company").classed("hidden", function(d) {
       // return true;
       // console.log(d);
       for (var i = 0; i < d.values.length; i++) {
@@ -208,7 +216,13 @@ var brushCell;
   }
 
   function brushend() {
-    // if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
+    if (d3.brushSelection(this) === null) svg.selectAll(".hidden").classed("hidden", false);
+    //Add a new brush as needed
+    newBrush();
+    update();
   }
+
+newBrush();
+// update();
 
 </script>
