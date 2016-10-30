@@ -6,7 +6,25 @@
   display: none;
 }
 
+path {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+path.hidden {
+  fill: none;
+  stroke: #ccc !important;
+  stroke-width: 1.5px;
+}
+
 .line {
+  fill: none;
+  stroke: gray;
+  stroke-width: 1.5px;
+}
+
+.line.hovering {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
@@ -15,9 +33,15 @@
 </style>
 <svg width="960" height="500"></svg>
 <script src="//d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-color.v1.min.js"></script>
 <script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
+<script src="https://d3js.org/d3-ease.v1.min.js"></script>
+<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+<script src="https://d3js.org/d3-timer.v1.min.js"></script>
 <script src="https://d3js.org/d3-selection.v1.min.js"></script>
+<script src="https://d3js.org/d3-transition.v1.min.js"></script>
 <script src="https://d3js.org/d3-drag.v1.min.js"></script>
+<script src="https://d3js.org/d3-brush.v1.min.js"></script>
 <script>
 
 var svg = d3.select("svg"),
@@ -36,6 +60,13 @@ var line = d3.line()
     .curve(d3.curveBasis)
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.price); });
+
+var brush = d3.brush()
+      .on("start", brushstart)
+      .on("brush", brushmove)
+      .on("end", brushend);
+
+svg.call(brush);
 
 d3.csv("stock_data.csv", type, function(error, data) {
   if (error) throw error;
@@ -88,6 +119,8 @@ d3.csv("stock_data.csv", type, function(error, data) {
       .attr("class", "line")
       .attr("d", function(d) { return line(d.values); })
       .style("stroke", function(d) { return z(d.id); });
+      // .on('mouseover', hovering)
+      // .on('mouseout', not_hovering);
 
   city.append("text")
       .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
@@ -104,18 +137,53 @@ function type(d, _, columns) {
   return d;
 }
 
-// var drag = d3.drag()
-//   .on("start", function(d,i) {
-//   })
-//   .on("drag", function(d,i) {
+// function hovering(d) {
+//   console.log("HOVERING");
+//   d3.select(this).classed("hovering", true);
+// }
 //
-//   })
+// function not_hovering(d) {
+//   console.log("NOT HOVERING");
+//   d3.select(this).classed("hovering", false);
+// }
+//
+// // var drag = d3.drag()
+// //   .on("start", function(d,i) {
+// //   })
+// //   .on("drag", function(d,i) {
+// //
+// //   })
+//
+// var startX, startY;
+// var isDrawing = false;
+//
+// function onDrag(d) {
+//
+// }
 
-var startX, startY;
-var isDrawing = false;
+var brushCell;
 
-function onDrag(d) {
+  // Clear the previously-active brush, if any.
+  function brushstart(p) {
+    if (brushCell !== this) {
+      d3.select(brushCell).call(brush.clear());
+      x.domain(domainByTrait[p.x]);
+      y.domain(domainByTrait[p.y]);
+      brushCell = this;
+    }
+  }
 
-}
+  // Highlight the selected circles.
+  function brushmove(p) {
+    var e = brush.extent();
+    svg.selectAll("path").classed("hidden", function(d) {
+      return e[0][0] > d[p.x] || d[p.x] > e[1][0]
+          || e[0][1] > d[p.y] || d[p.y] > e[1][1];
+    });
+  }
+
+  function brushend() {
+    if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
+  }
 
 </script>
