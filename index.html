@@ -71,7 +71,7 @@ svg.call(brush);
 d3.csv("stock_data.csv", type, function(error, data) {
   if (error) throw error;
 
-  var cities = data.columns.slice(1).map(function(id) {
+  var companies = data.columns.slice(1).map(function(id) {
     return {
       id: id,
       values: data.map(function(d) {
@@ -83,11 +83,11 @@ d3.csv("stock_data.csv", type, function(error, data) {
   x.domain(d3.extent(data, function(d) { return d.date; }));
 
   y.domain([
-    d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.price; }); }),
-    d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.price; }); })
+    d3.min(companies, function(c) { return d3.min(c.values, function(d) { return d.price; }); }),
+    d3.max(companies, function(c) { return d3.max(c.values, function(d) { return d.price; }); })
   ]);
 
-  z.domain(cities.map(function(c) { return c.id; }));
+  z.domain(companies.map(function(c) { return c.id; }));
 
   g.append("g")
       .attr("class", "axis axis--x")
@@ -110,23 +110,24 @@ d3.csv("stock_data.csv", type, function(error, data) {
       .attr("fill", "#000")
       .text("Stock Price, $");
 
-  var city = g.selectAll(".city")
-    .data(cities)
+  var company = g.selectAll(".company")
+    .data(companies)
     .enter().append("g")
-      .attr("class", "city");
+      .attr("class", "company");
 
-  city.append("path")
+  company.append("path")
       .attr("class", "line")
       .attr("d", function(d) { return line(d.values); })
       .style("stroke", function(d) { return z(d.id); });
       // .on('mouseover', hovering)
       // .on('mouseout', not_hovering);
 
-  city.append("text")
+  company.append("text")
       .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
       .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.price) + ")"; })
       .attr("x", 3)
       .attr("dy", "0.35em")
+      .attr("fill", "#000")
       .style("font", "10px sans-serif")
       .text(function(d) { return d.id; });
 });
@@ -173,13 +174,36 @@ var brushCell;
     }
   }
 
+  for (var i = 0; i < d.values.length; i++) {
+        var date = d.values[i].date;
+        var price = d.values[i].price;
+
+        if (date < x0 || date > x1) continue;
+        if (price < y1 || price > y0) continue;
+        return false;
+      }
+      return true;
+
   // Highlight the selected circles.
   function brushmove(p) {
     var e = d3.brushSelection(brushCell);//brush.extent();
-    console.log(e);
-    svg.selectAll("path").classed("hidden", function(d) {
-      return e[0][0] > d[p.x] || d[p.x] > e[1][0]
-          || e[0][1] > d[p.y] || d[p.y] > e[1][1];
+    // console.log(e);
+    var x0 = x.invert(e[0][0] - margin.left);
+    var x1 = x.invert(e[1][0] - margin.left);
+    var y0 = y.invert(e[0][1] - margin.top);
+    var y1 = y.invert(e[1][1] - margin.top);
+
+    svg.selectAll(".line")
+      .classed("hidden", (function(d) {
+        for (var i = 0; i < d.values.length; i++) {
+        var date = d.values[i].date;
+        var price = d.values[i].price;
+
+        if (date < x0 || date > x1) continue;
+        if (price < y1 || price > y0) continue;
+        return false;
+      }
+      return true;
     });
   }
 
