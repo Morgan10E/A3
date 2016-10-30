@@ -45,7 +45,7 @@
 }*/
 
 </style>
-<svg width="960" height="500"></svg>
+<svg width="1500" height="650"></svg>
 <script src="//d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-color.v1.min.js"></script>
 <script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
@@ -71,7 +71,7 @@ var x = d3.scaleTime().range([0, width]),
     z = d3.scaleOrdinal(d3.schemeCategory10);
 
 var line = d3.line()
-    .curve(d3.curveBasis)
+    .curve(d3.curveLinear)
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.price); });
 
@@ -162,7 +162,7 @@ d3.csv("stock_datab.csv", type, function(error, data) {
       .attr("x", 3)
       .attr("dy", "0.35em")
       .attr("fill", "#000")
-      .style("font", "10px sans-serif")
+      .style("font", "4px sans-serif")
       .attr("fill", "#000")
       .text(function(d) { return d.id; });
 
@@ -224,6 +224,16 @@ var newBrush = function (){
     // d3.select(this).call(brush.extent(e));
   }
 
+  function brushend() {
+    if (d3.brushSelection(this) === null) {
+      svg.selectAll(".hidden").classed("hidden", false);
+      gBrushes.selectAll('.brush').remove();
+    }
+
+    newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
+    update();
+  }
+
   brushes.push({id: brushes.length, brush: brush});
 }
 
@@ -245,17 +255,18 @@ function update() {
 
 var brushCell;
 
-  function brushend() {
-    if (d3.brushSelection(this) === null) {
-      svg.selectAll(".hidden").classed("hidden", false);
-      for (b in brushes){
-        b.remove();
-      }
-    }
+  // function brushend() {
+  //   if (d3.brushSelection(this) === null) {
+  //     svg.selectAll(".hidden").classed("hidden", false);
+  //     for (b in brushes){
+  //       b.remove();
+  //     }
+  //     gBrushes = null;
+  //   }
 
-    newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
-    update();
-  }
+  //   newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
+  //   update();
+  // }
 
   newBrush();
   update();
