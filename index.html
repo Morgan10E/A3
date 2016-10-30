@@ -166,16 +166,17 @@ var brushCell;
   // Clear the previously-active brush, if any.
   function brushstart(p) {
     if (brushCell !== this) {
-      d3.select(brushCell).call(brush.clear());
-      x.domain(domainByTrait[p.x]);
-      y.domain(domainByTrait[p.y]);
+      // d3.select(brushCell).call(brush.clear());
+      // x.domain(domainByTrait[p.x]);
+      // y.domain(domainByTrait[p.y]);
       brushCell = this;
     }
   }
 
   // Highlight the selected circles.
   function brushmove(p) {
-    var e = brush.extent();
+    var e = d3.brushSelection(brushCell);//brush.extent();
+    console.log(e);
     svg.selectAll("path").classed("hidden", function(d) {
       return e[0][0] > d[p.x] || d[p.x] > e[1][0]
           || e[0][1] > d[p.y] || d[p.y] > e[1][1];
@@ -183,7 +184,7 @@ var brushCell;
   }
 
   function brushend() {
-    if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
+    // if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
   }
 
 </script>
