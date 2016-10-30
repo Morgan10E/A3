@@ -6,19 +6,24 @@
   display: none;
 }
 
-path {
+.city path {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
 
-path.hidden {
+.city.hidden path {
   fill: none;
   stroke: #ccc !important;
   stroke-width: 1.5px;
 }
 
-.line {
+.city.hidden text {
+  fill: #ccc !important;
+}
+
+
+/*.line {
   fill: none;
   stroke: gray;
   stroke-width: 1.5px;
@@ -28,7 +33,7 @@ path.hidden {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
-}
+}*/
 
 </style>
 <svg width="960" height="500"></svg>
@@ -128,6 +133,7 @@ d3.csv("stock_data.csv", type, function(error, data) {
       .attr("x", 3)
       .attr("dy", "0.35em")
       .style("font", "10px sans-serif")
+      .attr("fill", "#000")
       .text(function(d) { return d.id; });
 });
 
@@ -165,21 +171,38 @@ var brushCell;
 
   // Clear the previously-active brush, if any.
   function brushstart(p) {
-    if (brushCell !== this) {
+    // if (brushCell !== this) {
       // d3.select(brushCell).call(brush.clear());
       // x.domain(domainByTrait[p.x]);
       // y.domain(domainByTrait[p.y]);
-      brushCell = this;
-    }
+    //   console.log(p);
+    //   brushCell = this;
+    // }
   }
 
   // Highlight the selected circles.
   function brushmove(p) {
-    var e = d3.brushSelection(brushCell);//brush.extent();
-    console.log(e);
-    svg.selectAll("path").classed("hidden", function(d) {
-      return e[0][0] > d[p.x] || d[p.x] > e[1][0]
-          || e[0][1] > d[p.y] || d[p.y] > e[1][1];
+    var e = d3.brushSelection(this);//brush.extent();
+    // console.log(e);
+    var x0 = x.invert(e[0][0] - margin.left);
+    var x1 = x.invert(e[1][0] - margin.left);
+    var y0 = y.invert(e[0][1] - margin.top);
+    var y1 = y.invert(e[1][1] - margin.top);
+    // console.log("(" + x0 + ", " + y0 + ")");
+    svg.selectAll(".city").classed("hidden", function(d) {
+      // return true;
+      // console.log(d);
+      for (var i = 0; i < d.values.length; i++) {
+        var date = d.values[i].date;
+        var price = d.values[i].price;
+
+        if (date < x0 || date > x1) continue;
+        if (price < y1 || price > y0) continue;
+        return false;
+      }
+      return true;
+      // return e[0][0] > d[p.x] || d[p.x] > e[1][0]
+      //     || e[0][1] > d[p.y] || d[p.y] > e[1][1];
     });
   }
 
