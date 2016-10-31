@@ -36,6 +36,10 @@
   shape-rendering: crispEdges;
 }
 
+.pointer-setup {
+  pointer-events: visible;
+}
+
 
 /*.line {
   fill: none;
@@ -253,10 +257,12 @@ var newBrush = function (){
       update();
     }
 
-    if (d3.brushSelection(brushes[brushes.length - 1]) != null){
+    // if (d3.brushSelection(brushes[brushes.length - 1]) != null){
+
+      gBrushes.selectAll('.overlay').attr("pointer-events", "none");
       newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
       update();
-    }
+    // }
   }
 
   brushes.push({id: brushes.length, brush: brush});
