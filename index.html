@@ -208,6 +208,8 @@ function notHovering() {
 var gBrushes = svg.insert('g')
 	.attr("class", "brushes");
 
+var curBrush = null;
+
 var newBrush = function (){
   var brush = d3.brush()
       .on("start", brushstart)
@@ -223,6 +225,14 @@ var newBrush = function (){
     if(brush.extent.start == undefined)
     	d3.event.sourceEvent.x;
 
+    for (var i = 0; i < brushes.length; i++) {
+      // console.log(d3.event);
+      if (d3.event.selection === brushes[i].selection) {
+        console.log("OLD BRUSH " + i);
+        curBrush = i;
+      }
+    }
+    console.log("CurBrush: " + curBrush);
   };
 
   function brushmove(p) {
@@ -233,17 +243,36 @@ var newBrush = function (){
     var y0 = y.invert(e[0][1] - margin.top);
     var y1 = y.invert(e[1][1] - margin.top);
 
-    //NEED TO FILTER FOR "CURRENTLY NOT HIDDEN" BEFORE CLASSED
     svg.selectAll(".stock")
       .classed("hidden", function(d) {
+        var bID = brushes.length - 1;
+        var offset = 0;
+        if (curBrush !== null) {
+          bID = curBrush;
+          offset = -1;
+        }
+        var found = false;
         for (var i = 0; i < d.values.length; i++) {
           var date = d.values[i].date;
           var price = d.values[i].price;
           if (date < x0 || date > x1) continue;
           if (price < y1 || price > y0) continue;
-          return false;
+          brushes[bID].contents.add(d);
+          found = true;
+          break;
         }
-        return true;
+        if (!found) {
+          brushes[bID].contents.delete(d);
+          return true;
+        }
+        for (var i = 0; i < brushes.length + offset; i++) {
+          var contents = brushes[i].contents;
+          if (!contents.has(d) && brushes[i].selection) {
+            // console.log(i + " does not contain the " + d);
+            return true;
+          }
+        }
+        return false;
     });
 
     // gBrushes.call(brush.extent(e));
@@ -253,19 +282,27 @@ var newBrush = function (){
     if (d3.brushSelection(this) === null) {
       svg.selectAll(".hidden").classed("hidden", false);
       gBrushes.selectAll('.brush').remove();
+      brushes = [];
       newBrush();
       update();
     }
 
+    console.log(d3.event.selection);
     // if (d3.brushSelection(brushes[brushes.length - 1]) != null){
+    if (curBrush !== null) {
+      brushes[curBrush].selection = d3.event.selection;
+    } else {
+      brushes[brushes.length - 1].selection = d3.event.selection;
 
       gBrushes.selectAll('.overlay').attr("pointer-events", "none");
+      console.log("NEW BRUSH");
       newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
       update();
-    // }
+    }
+    curBrush = null;
   }
 
-  brushes.push({id: brushes.length, brush: brush});
+  brushes.push({id: brushes.length, brush: brush, contents: new Set()});
 }
 
 function update() {
