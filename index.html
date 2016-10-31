@@ -105,6 +105,13 @@ var brushes = [];
 d3.csv("stock_datab.csv", type, function(error, data) {
   if (error) throw error;
 
+  svg.selectAll(".stock").classed("hidden", function(d) {
+    for (var i = 0; i < d.values.length; i++) {
+      stocks_shown.add(d.values[i]);
+    }
+    return false;
+  });
+
 
   var stocks = data.columns.slice(1).map(function(id) {
 
@@ -194,12 +201,8 @@ function notHovering() {
 }
 
 //brushes container
-var gBrushes = svg.append('g')
+var gBrushes = svg.insert('g')
 	.attr("class", "brushes");
-
-//keep track of existing brushes
-var brushes = [];
-var curBrush = null;
 
 var newBrush = function (){
   var brush = d3.brush()
@@ -209,21 +212,13 @@ var newBrush = function (){
 
 
   function brushstart() {
-    console.log("BRUSH STARTED");
-    console.log(brushes);
-
-    for (var i = 0; i < brushes.length; i++) {
-      if (d3.brushSelection(brushes[i].brush) === d3.brushSelection(this)) {
-        console.log(d3.brushSelection(brushes[i].brush));
-        curBrush = i;
-      }
-    }
+    // console.log("BRUSH STARTED");
     if (d3.event.sourceEvent)
-        brush.mouseStart = d3.event.sourceEvent.x;
+      brush.mouseStart = d3.event.sourceEvent.x;
 
-    if(brush.extent.start == undefined){
+    if(brush.extent.start == undefined)
     	d3.event.sourceEvent.x;
-    }
+
   };
 
   function brushmove(p) {
@@ -235,16 +230,16 @@ var newBrush = function (){
     var y1 = y.invert(e[1][1] - margin.top);
 
     //NEED TO FILTER FOR "CURRENTLY NOT HIDDEN" BEFORE CLASSED
-    svg.selectAll(".stock").classed("hidden", function(d) {
-      for (var i = 0; i < d.values.length; i++) {
-        var date = d.values[i].date;
-        var price = d.values[i].price;
-
-        if (date < x0 || date > x1) continue;
-        if (price < y1 || price > y0) continue;
-        return false;
-      }
-      return true;
+    svg.selectAll(".stock")
+      .classed("hidden", function(d) {
+        for (var i = 0; i < d.values.length; i++) {
+          var date = d.values[i].date;
+          var price = d.values[i].price;
+          if (date < x0 || date > x1) continue;
+          if (price < y1 || price > y0) continue;
+          return false;
+        }
+        return true;
     });
 
     // gBrushes.call(brush.extent(e));
@@ -254,15 +249,14 @@ var newBrush = function (){
     if (d3.brushSelection(this) === null) {
       svg.selectAll(".hidden").classed("hidden", false);
       gBrushes.selectAll('.brush').remove();
+      newBrush();
+      update();
     }
 
-    if (curBrush === null) {
-      console.log("NEW BRUSH");
+    if (d3.brushSelection(brushes[brushes.length - 1]) != null){
       newBrush(); //SHOULD ONLY CALL THIS ON A NEW BRUSH, NOT MOVE OR RESIZE
+      update();
     }
-    update();
-    curBrush = null;
-
   }
 
   brushes.push({id: brushes.length, brush: brush});
@@ -279,14 +273,11 @@ function update() {
 			brushWrapper.brush(d3.select(this));
 		});
 
-
-	gBrush.exit()
-		.remove();
-
   svg.selectAll(".hidden").classed("hidden", true).lower();
-}
 
-var brushCell;
+	// gBrush.exit()
+	// 	.remove();
+}
 
   // function brushend() {
   //   if (d3.brushSelection(this) === null) {
@@ -301,7 +292,7 @@ var brushCell;
   //   update();
   // }
 
-  newBrush();
-  update();
+newBrush();
+update();
 
 </script>
