@@ -191,7 +191,7 @@ var newBrush = function (){
 
 
   function brushstart() {
-    console.log("BRUSH STARTED");
+    // console.log("BRUSH STARTED");
     if (d3.event.sourceEvent)
         brush.mouseStart = d3.event.sourceEvent.x;
     
@@ -213,7 +213,6 @@ var newBrush = function (){
       for (var i = 0; i < d.values.length; i++) {
         var date = d.values[i].date;
         var price = d.values[i].price;
-
         if (date < x0 || date > x1) continue;
         if (price < y1 || price > y0) continue;
         return false;
@@ -247,7 +246,7 @@ function update() {
 		.each(function(brushWrapper) {
 			brushWrapper.brush(d3.select(this));
 		});
-
+  svg.selectAll(".hidden").classed("hidden", true).lower();
 
 	gBrush.exit()
 		.remove();
